@@ -87,8 +87,24 @@ class TrainManager:
                     if val_loss < self.best_loss and self.kwargs["logging_active"]:
                         self.best_loss = val_loss
                         self.log.logger.log_model(self.model, epoch, batch_idx, round(self.best_loss, 4), val_acc)
-                        printer.info("Model saved")
-                        printer.info(f"Best Loss: {self.best_loss} | Accuracy: {val_acc}")
+
+                        # ✅ Save model with name
+                        model_name = self.kwargs.get("model_name", "Model")
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        save_path = os.path.join(self.kwargs["log_dir"], f"{model_name}_{timestamp}.pth")
+                        torch.save(self.model.state_dict(), save_path)
+
+                        # ✅ Save summary to .txt
+                        summary_path = os.path.join(self.kwargs["log_dir"], f"{model_name}_{timestamp}_summary.txt")
+                        with open(summary_path, "w") as f:
+                            f.write(f"Model: {model_name}\n")
+                            f.write(f"Saved At: {save_path}\n")
+                            f.write(f"Best Validation Loss: {self.best_loss:.4f}\n")
+                            f.write(f"Validation Accuracy: {val_acc:.4f}\n")
+                            f.write(f"Epoch: {epoch}, Batch: {batch_idx}\n")
+
+                        printer.info(f"✅ Model saved to: {save_path}")
+                        printer.info(f"📄 Summary saved to: {summary_path}")
 
         print("End of the Training :)")
 
