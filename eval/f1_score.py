@@ -9,12 +9,14 @@ from sklearn.metrics import (
 )
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns  # For better heatmap display
 
 from dataset.loader import ODIR5K
 from network.model import get_model
 
 
 class Evaluater:
+
     def __init__(self, params):
         self.params = params
         self.device = self.params.get("device")
@@ -75,30 +77,37 @@ class Evaluater:
         self.evaluate_and_visualize(y_true, y_pred, y_prob)
 
     def evaluate_and_visualize(self, y_true, y_pred, y_prob):
+        # === Classification Report ===
         print("\nClassification Report:\n")
         report = classification_report(
             y_true, y_pred, target_names=self.classes, output_dict=True, zero_division=0
         )
         print(pd.DataFrame(report).transpose())
 
+        # === Macro F1 Score ===
         macro_f1 = f1_score(y_true, y_pred, average="macro")
         print(f"Macro F1 Score: {macro_f1:.4f}")
 
+        # === ROC-AUC ===
         try:
             roc_auc = roc_auc_score(y_true, y_prob, average="macro")
             print(f"Macro ROC-AUC: {roc_auc:.4f}")
         except ValueError:
             print("ROC AUC score could not be calculated.")
 
-        os.makedirs("results", exist_ok=True)
+        # === Save CSV of predictions ===
         pred_df = pd.DataFrame(y_pred, columns=self.classes)
         true_df = pd.DataFrame(y_true, columns=[f"True_{c}" for c in self.classes])
         prob_df = pd.DataFrame(y_prob, columns=[f"Prob_{c}" for c in self.classes])
         result_df = pd.concat([true_df, prob_df, pred_df], axis=1)
+        os.makedirs("results", exist_ok=True)
         result_df.to_csv("results/predictions.csv", index=False)
-        print("✅ Saved predictions to results/predictions.csv")
+        print("Saved predictions to results/predictions.csv")
 
+        # === Confusion Matrix ===
         self.plot_multilabel_confusion_matrix(y_true, y_pred)
+
+        # === ROC Curve ===
         self.plot_roc_curves(y_true, y_prob)
 
     def plot_multilabel_confusion_matrix(self, y_true, y_pred):
@@ -107,17 +116,17 @@ class Evaluater:
         axes = axes.flatten()
         for i, (ax, label) in enumerate(zip(axes, self.classes)):
             tn, fp, fn, tp = cm[i].ravel()
-            matrix = np.array([[tp, fn], [fp, tn]])
-            ax.matshow(matrix, cmap=plt.cm.Blues)
+            sns = np.array([[tp, fn], [fp, tn]])
+            ax.matshow(sns, cmap=plt.cm.Blues)
             ax.set_title(f'{label}')
             ax.set_xlabel('Predicted')
             ax.set_ylabel('True')
-            for (j, k), val in np.ndenumerate(matrix):
+            for (j, k), val in np.ndenumerate(sns):
                 ax.text(k, j, f'{val}', ha='center', va='center', color='red')
         plt.tight_layout()
         plt.savefig("results/confusion_matrix.png")
         plt.show()
-        print("✅ Confusion matrix saved as results/confusion_matrix.png")
+        print("Confusion matrix saved as results/confusion_matrix.png")
 
     def plot_roc_curves(self, y_true, y_prob):
         plt.figure(figsize=(10, 8))
@@ -137,32 +146,4 @@ class Evaluater:
         plt.grid(True)
         plt.savefig("results/roc_curve.png")
         plt.show()
-        print("✅ ROC curve saved as results/roc_curve.png")
-
-
-# ✅ Entry Point
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate F1 score for multi-label classification")
-
-    parser.add_argument("--model_name", type=str, default="SqueezeNet_11_Pretrained")
-    parser.add_argument("--load_model_path", type=str,
-                        default="./docs/logs/SqueezeNet_11_Pretrained_20250706_172133.pth")
-    parser.add_argument("--img_dir", type=str,
-                        default="/kaggle/input/ocular-disease-recognition-odir5k/preprocessed_images")
-    parser.add_argument("--label_dir", type=str,
-                        default="/kaggle/input/full-df/full_df.csv")
-    parser.add_argument("--train_test_size", type=float, default=0.9)
-    parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--num_workers", type=int, default=2)
-    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--augment", default=None)
-
-    args = parser.parse_args()
-    params = vars(args)
-
-    print("📊 Evaluation Parameters:")
-    for k, v in params.items():
-        print(f"{k}: {v}")
-
-    evaluator = Evaluater(params)
-    evaluator.run()
+        print("ROC curve saved as results/roc_curve.png")
