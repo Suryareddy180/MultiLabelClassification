@@ -100,8 +100,8 @@ class Evaluater:
         true_df = pd.DataFrame(y_true, columns=[f"True_{c}" for c in self.classes])
         prob_df = pd.DataFrame(y_prob, columns=[f"Prob_{c}" for c in self.classes])
         result_df = pd.concat([true_df, prob_df, pred_df], axis=1)
-        os.makedirs("results", exist_ok=True)
-        result_df.to_csv("results/predictions.csv", index=False)
+        os.makedirs("/kaggle/working/results", exist_ok=True)
+        result_df.to_csv("/kaggle/working/results/predictions.csv", index=False)
         print("Saved predictions to results/predictions.csv")
 
         # === Confusion Matrix ===
@@ -124,7 +124,7 @@ class Evaluater:
             for (j, k), val in np.ndenumerate(sns):
                 ax.text(k, j, f'{val}', ha='center', va='center', color='red')
         plt.tight_layout()
-        plt.savefig("results/confusion_matrix.png")
+        plt.savefig("/kaggle/working/results/confusion_matrix.png")
         plt.show()
         print("Confusion matrix saved as results/confusion_matrix.png")
 
@@ -144,6 +144,6 @@ class Evaluater:
         plt.title('Per-Class ROC Curve')
         plt.legend(loc='lower right')
         plt.grid(True)
-        plt.savefig("results/roc_curve.png")
+        plt.savefig("/kaggle/working/results/roc_curve.png")
         plt.show()
         print("ROC curve saved as results/roc_curve.png")
