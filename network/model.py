@@ -270,4 +270,4 @@ def get_model(model_name, device, kwargs):
             print("Model loaded from path: {}".format(kwargs.get("load_model_path")))
         except:
             raise Exception("Model not found in path: {}".format(kwargs.get("load_model_path")))
-    return model
+    return model 
